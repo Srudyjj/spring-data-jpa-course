@@ -1,11 +1,20 @@
 package com.example.demo;
 
+import com.github.javafaker.Faker;
+import com.github.javafaker.service.FakeValuesService;
+import com.github.javafaker.service.RandomService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SpringBootApplication
 public class Application {
@@ -17,24 +26,36 @@ public class Application {
     @Bean
     CommandLineRunner commandLineRunner(StudentRepository studentRepository) {
         return args -> {
-            var maria = new Student("Maria", "Jones", "mrjones@gmail.com", 27);
-            var ahmed = new Student("Ahmed", "Ali", "ahali@gmail.com", 27);
-            System.out.println("Adding...");
-            studentRepository.saveAll(List.of(maria, ahmed));
+            Faker faker = new Faker();
+            FakeValuesService fakeValuesService = new FakeValuesService(
+                    new Locale("en-GB"), new RandomService());
+            List<Student> students = Stream
+                    .generate(() -> generateRandomStudent(faker, fakeValuesService))
+                    .limit(30)
+                    .collect(Collectors.toList());
+            studentRepository.saveAll(students);
 
-            studentRepository.findStudentByEmail("mrjones@gmail.com")
-                    .ifPresentOrElse(System.out::println, () -> System.out.println("Not found"));
-
-            studentRepository
-                    .findStudentsByFirstNameEqualsAndAgeIsGreaterThan("Maria", 26)
-                    .forEach(System.out::println);
-
-            studentRepository
-                    .findStudentsByFirstNameEqualsAndAgeIsGreaterThanNative("Maria", 26)
-                    .forEach(System.out::println);
-
-            studentRepository.deleteStudentById(1l);
+            PageRequest pageRequest = PageRequest.of(2, 5, Sort.by("firstName"));
+            Page<Student> studentPage = studentRepository.findAll(pageRequest);
+            System.out.println(studentPage);
+//            sorting(studentRepository);
         };
+    }
+
+    private void sorting(StudentRepository studentRepository) {
+        Sort sort = Sort.by("firstName").ascending().and(Sort.by("age").descending());
+        studentRepository
+                .findAll(sort)
+                .forEach(student -> System.out.println(student.getFirstName() + " " + student.getAge()));
+    }
+
+    private Student generateRandomStudent(Faker faker, FakeValuesService fakeValuesService) {
+        Student student = new Student(
+                faker.name().firstName(),
+                faker.name().lastName(),
+                fakeValuesService.bothify("????##@gmail.com"),
+                faker.number().numberBetween(17, 60));
+        return student;
     }
 
 }
