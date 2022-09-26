@@ -21,19 +21,19 @@ public class Application {
             var ahmed = new Student("Ahmed", "Ali", "ahali@gmail.com", 27);
             System.out.println("Adding...");
             studentRepository.saveAll(List.of(maria, ahmed));
-            System.out.print("Number of students: ");
-            System.out.println(studentRepository.count());
-            studentRepository.findById(2l).ifPresentOrElse(System.out::println, () -> System.out.println("Not found"));
-            studentRepository.findById(3l).ifPresentOrElse(System.out::println, () -> System.out.println("Not found"));
 
-            System.out.println("Select all");
-            studentRepository.findAll().forEach(System.out::println);
+            studentRepository.findStudentByEmail("mrjones@gmail.com")
+                    .ifPresentOrElse(System.out::println, () -> System.out.println("Not found"));
 
-            System.out.println("Delete by id");
-            studentRepository.deleteById(1l);
+            studentRepository
+                    .findStudentsByFirstNameEqualsAndAgeIsGreaterThan("Maria", 26)
+                    .forEach(System.out::println);
 
-            System.out.print("Number of students: ");
-            System.out.println(studentRepository.count());
+            studentRepository
+                    .findStudentsByFirstNameEqualsAndAgeIsGreaterThanNative("Maria", 26)
+                    .forEach(System.out::println);
+
+            studentRepository.deleteStudentById(1l);
         };
     }
 
