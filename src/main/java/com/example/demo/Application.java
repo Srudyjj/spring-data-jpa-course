@@ -24,20 +24,23 @@ public class Application {
     }
 
     @Bean
-    CommandLineRunner commandLineRunner(StudentRepository studentRepository) {
+    CommandLineRunner commandLineRunner(StudentRepository studentRepository, StudentIdCardRepository studentIdCardRepository) {
         return args -> {
             Faker faker = new Faker();
             FakeValuesService fakeValuesService = new FakeValuesService(
                     new Locale("en-GB"), new RandomService());
-            List<Student> students = Stream
-                    .generate(() -> generateRandomStudent(faker, fakeValuesService))
-                    .limit(30)
-                    .collect(Collectors.toList());
-            studentRepository.saveAll(students);
+            StudentIdCard studentIdCard = new StudentIdCard("123456789", generateRandomStudent(faker, fakeValuesService));
+            studentIdCardRepository.save(studentIdCard);
+//
+//            List<Student> students = Stream
+//                    .generate(() -> generateRandomStudent(faker, fakeValuesService))
+//                    .limit(30)
+//                    .collect(Collectors.toList());
+//            studentRepository.saveAll(students);
 
-            PageRequest pageRequest = PageRequest.of(2, 5, Sort.by("firstName"));
-            Page<Student> studentPage = studentRepository.findAll(pageRequest);
-            System.out.println(studentPage);
+//            PageRequest pageRequest = PageRequest.of(2, 5, Sort.by("firstName"));
+//            Page<Student> studentPage = studentRepository.findAll(pageRequest);
+//            System.out.println(studentPage);
 //            sorting(studentRepository);
         };
     }
