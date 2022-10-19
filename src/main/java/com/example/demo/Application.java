@@ -7,14 +7,11 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @SpringBootApplication
 public class Application {
@@ -24,19 +21,44 @@ public class Application {
     }
 
     @Bean
-    CommandLineRunner commandLineRunner(StudentRepository studentRepository, StudentIdCardRepository studentIdCardRepository) {
+    CommandLineRunner commandLineRunner(StudentRepository studentRepository, StudentIdCardRepository studentIdCardRepository, StudentService studentService) {
         return args -> {
             Faker faker = new Faker();
-            FakeValuesService fakeValuesService = new FakeValuesService(
-                    new Locale("en-GB"), new RandomService());
-            StudentIdCard studentIdCard = new StudentIdCard("123456789", generateRandomStudent(faker, fakeValuesService));
-            studentIdCardRepository.save(studentIdCard);
+            FakeValuesService fakeValuesService = new FakeValuesService(new Locale("en-GB"), new RandomService());
+            Student student = generateRandomStudent(faker, fakeValuesService);
+            student.addBook(new Book("Clean Code", LocalDateTime.now().minusDays(10)));
+            student.addBook(new Book("Think and Grow Rich", LocalDateTime.now().minusDays(1)));
+            student.addBook(new Book("Spring Boot in Action", LocalDateTime.now().minusYears(10)));
+
+            StudentIdCard studentIdCard = new StudentIdCard("123456789", student);
+
+            student.setStudentIdCard(studentIdCard);
+
+            studentRepository.save(student);
+
+            studentService.processBooks();
+//            studentRepository.findById(1L).ifPresent(s -> {
+//                System.out.println("Fetching books ...");
+//                List<Book> books = s.getBooks();
+//                books.forEach(book -> {
+//                    System.out.println(s.getFirstName() + " borrowed " + book.getBookName());
+//                });
+//            });
+
+
+//            Student studentFromDb = studentRepository.findById(1L).orElseThrow();
 //
-//            studentRepository.findById(1L).ifPresent(System.out::println);
+//            System.out.println("fetch book lazy...");
+//            List<Book> books = studentFromDb.getBooks();
+//            System.out.println(books.get(0));
+//            books.forEach(book -> {
+//                System.out.println(studentFromDb.getFirstName() + " borrowed " + book.getBookName());
+//            });
+
 //
 //            studentIdCardRepository.findById(1L).ifPresent(System.out::println);
 
-            studentRepository.deleteById(1L);
+//            studentRepository.deleteById(1L);
 //            studentIdCardRepository.deleteById(1L);
 //
 //            List<Student> students = Stream
@@ -54,17 +76,11 @@ public class Application {
 
     private void sorting(StudentRepository studentRepository) {
         Sort sort = Sort.by("firstName").ascending().and(Sort.by("age").descending());
-        studentRepository
-                .findAll(sort)
-                .forEach(student -> System.out.println(student.getFirstName() + " " + student.getAge()));
+        studentRepository.findAll(sort).forEach(student -> System.out.println(student.getFirstName() + " " + student.getAge()));
     }
 
     private Student generateRandomStudent(Faker faker, FakeValuesService fakeValuesService) {
-        Student student = new Student(
-                faker.name().firstName(),
-                faker.name().lastName(),
-                fakeValuesService.bothify("????##@gmail.com"),
-                faker.number().numberBetween(17, 60));
+        Student student = new Student(faker.name().firstName(), faker.name().lastName(), fakeValuesService.bothify("????##@gmail.com"), faker.number().numberBetween(17, 60));
         return student;
     }
 

@@ -2,13 +2,19 @@ package com.example.demo;
 
 import javax.persistence.*;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import static javax.persistence.GenerationType.SEQUENCE;
+
 @Entity(name = "Student")
 @Table(
         name = "student",
         uniqueConstraints = {
                 @UniqueConstraint(name = "student_email_unique", columnNames = "email")
-        })
-
+        }
+)
 public class Student {
 
     @Id
@@ -18,59 +24,70 @@ public class Student {
             allocationSize = 1
     )
     @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
+            strategy = SEQUENCE,
             generator = "student_sequence"
     )
-
     @Column(
-            name = "id",
-            updatable = false
+            name = "id"
     )
     private Long id;
+
     @Column(
             name = "first_name",
             nullable = false,
             columnDefinition = "TEXT"
     )
     private String firstName;
+
     @Column(
             name = "last_name",
             nullable = false,
             columnDefinition = "TEXT"
     )
     private String lastName;
+
     @Column(
             name = "email",
             nullable = false,
             columnDefinition = "TEXT"
     )
     private String email;
+
     @Column(
             name = "age",
             nullable = false
+
     )
     private Integer age;
 
-    @OneToOne(mappedBy = "student", orphanRemoval = true)
+    @OneToOne(
+            mappedBy = "student",
+            orphanRemoval = true,
+            cascade = {CascadeType.PERSIST, CascadeType.REMOVE}
+
+    )
     private StudentIdCard studentIdCard;
 
-    public Student(String firstName, String lastName, String email, int age) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.email = email;
-        this.age = age;
-    }
+    @OneToMany(
+            mappedBy = "student",
+            orphanRemoval = true,
+            cascade = {CascadeType.ALL},
+            fetch = FetchType.LAZY
+    )
+    private List<Book> books = new ArrayList<>();
 
-    public Student(Long id, String firstName, String lastName, String email, Integer age, StudentIdCard studentIdCard) {
-        this.id = id;
+    public Student(String firstName,
+                   String lastName,
+                   String email,
+                   Integer age) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.age = age;
-        this.studentIdCard = studentIdCard;
     }
 
     public Student() {
+
     }
 
     public Long getId() {
@@ -113,12 +130,30 @@ public class Student {
         this.age = age;
     }
 
-    public StudentIdCard getStudentIdCard() {
-        return studentIdCard;
+    public void addBook(Book book) {
+        if (!this.books.contains(book)) {
+            this.books.add(book);
+            book.setStudent(this);
+        }
+    }
+
+    public void removeBook(Book book) {
+        if (this.books.contains(book)) {
+            this.books.remove(book);
+            book.setStudent(null);
+        }
     }
 
     public void setStudentIdCard(StudentIdCard studentIdCard) {
         this.studentIdCard = studentIdCard;
+    }
+
+    public List<Book> getBooks() {
+        return books;
+    }
+
+    private void setBooks(List<Book> books) {
+        this.books = books;
     }
 
     @Override
@@ -130,5 +165,18 @@ public class Student {
                 ", email='" + email + '\'' +
                 ", age=" + age +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Student student = (Student) o;
+        return Objects.equals(id, student.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }
